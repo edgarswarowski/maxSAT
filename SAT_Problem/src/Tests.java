@@ -21,7 +21,9 @@ public class Tests {
 		int iterations = 0;
 		boolean stopCiclo = false;
 		int max = 0;
-								
+		int[] assignmentMax = new int[variableSize];
+		int[] novoAssignment = new int[variableSize];		
+		
 		//LER ARQUIVO
 		ArrayList<String> Teste = r.readLine();
 		String[] convert = new String[Teste.size()];
@@ -29,62 +31,71 @@ public class Tests {
 				
 		//CONVERTER ARRAY INPUT EM ARRAY DE INTS
 		int[][] input = converteInput(instanceLength,clauseLength,convert);
-				
+		
+		//GERAR UM CROMOSSOMO ALEATORIO DE INTEIROS
+		int[] assignment = geraCromossomo(variableSize);
+		
 		//CICLO
 		do {
-			//CROMOSSOMO INTEIROS
-			int[] assignment = geraCromossomo(variableSize);
+			if (iterations > 0) {
+				//ESCOLHE POSIÇÃO ALEATORIA NO CROMOSSOMO PARA FLIPAR
+				int posicaoFlipar = geraPosicaoFlipar(assignment.length);
+				System.out.println("Posição a trocar: " + posicaoFlipar);
 				
-			//PREENCHER INSTÂNCIA COM ASSIGNEMENT
-			int[][] novaInst = preencheInst(input,assignment);
-			
-			//CONVERTER INSTÂNCIA NUM ARRAY DE BOOLEANS
-			boolean[][] novaInstBool = converteBool(novaInst);
-						
-			//RESULTADO POR LINHA DO ARRAYBOOL
-			int counter2 = 0;
-			int counterResult = 0;
-			boolean resultado = false;
-			boolean[] resultadoLinha = new boolean[instanceLength];
-			for(int y = 0; y<novaInstBool.length;y++) {
-				counter2= 0;
-				resultado = false;
-				for(int y1 = 0; y1< novaInstBool[y].length;y1++) {
-					counter2++;
-					if(counter2 != 0) {
-						resultado = resultado || novaInstBool[y][y1];
-					}
-					if (counter2 == 3) {
-						resultadoLinha[y] = resultado;
-						if(resultado == false) {
-							counterResult++;
-						}
-					}
+				novoAssignment = geraNovoAssignment(assignment,posicaoFlipar);
+				System.out.println("Novo Cromossomo: " + Arrays.toString(novoAssignment));
+				
+				int[][] novaInst2 = preencheInst(input, novoAssignment);
+				
+				//CONVERTER INSTÂNCIA NUM ARRAY DE BOOLEANS
+				boolean[][] novaInstBool2 = converteBool(novaInst2);
+							
+				//RESULTADO POR LINHA DO ARRAYBOOL
+				boolean[] resultadoLinha2 = getResultByLine(instanceLength, novaInstBool2);
+				
+				maxSat = getMaxSat(resultadoLinha2);
+				
+				System.out.println("Resultado Linha:");
+				System.out.println(Arrays.toString(resultadoLinha2));
+				
+				if(max < maxSat) {
+					max = maxSat;
+					assignmentMax = novoAssignment;
 				}
+				
+				System.out.println("Max SAT = " + maxSat);
+							
+			}else {
+				//PREENCHER INSTÂNCIA COM ASSIGNEMENT
+				int[][] novaInst = preencheInst(input,assignment);
+				
+				//CONVERTER INSTÂNCIA NUM ARRAY DE BOOLEANS
+				boolean[][] novaInstBool = converteBool(novaInst);
+							
+				//RESULTADO POR LINHA DO ARRAYBOOL
+				boolean[] resultadoLinha = getResultByLine(instanceLength, novaInstBool);
+				
+				maxSat = getMaxSat(resultadoLinha);
+				
+				assignmentMax = assignment;
+				
+				System.out.println("Resultado Linha:");
+				System.out.println(Arrays.toString(resultadoLinha));
 			}
-			
-			maxSat = instanceLength - counterResult;
-			
-			System.out.println("Resultado Linha:");
-			System.out.println(Arrays.toString(resultadoLinha));
-			System.out.println("Max SAT = " + maxSat);
-			
+						
 			iterations++;
 			System.out.println("Interações: " + iterations);
-			
-			if(max < maxSat) {
-				max = maxSat;
-			}
-			
+						
 			System.out.println("O valor máximo atingido foi de: " + max);
+			System.out.println("O Cromossomo que atingiu o maxSat foi o: \n" + Arrays.toString(assignmentMax));
 			if((maxSat == instanceLength) || (iterations == maxIterations)) {
 				stopCiclo = true;
 			}
 		
 		} while (stopCiclo != true);
 	}
-	
-	public static int[][] converteInput(int instLenght, int claLenght, String[] converte) {
+
+	private static int[][] converteInput(int instLenght, int claLenght, String[] converte) {
 		int counter = 0;
 		int [][] inputFile = new int[instLenght][claLenght]; 
 		for(int x1 = 0; x1 < inputFile.length; x1++) {
@@ -114,7 +125,7 @@ public class Tests {
 		return assignment2;
 	}
 	
-	public static int[][] preencheInst(int[][] input3, int[] assignment2){
+	private static int[][] preencheInst(int[][] input3, int[] assignment2){
 		int x = 0;
 		int[][] novaInst2 = new int[input3.length][input3[0].length];
 		for (int i = 0; i < input3.length; i++) {
@@ -140,7 +151,7 @@ public class Tests {
 		return novaInst2;
 	}
 	
-	public static boolean[][] converteBool(int[][] novaInst2){
+	private static boolean[][] converteBool(int[][] novaInst2){
 		boolean[][] instBoolean = new boolean[novaInst2.length][novaInst2[0].length];
 		
 		for(int k = 0; k < instBoolean.length; k++) {
@@ -157,4 +168,60 @@ public class Tests {
 
 		return instBoolean;
 	}
+	
+	private static boolean[] getResultByLine(int iLenght2, boolean[][] instBool) {
+		boolean[] finalResult = new boolean[iLenght2];
+		int counter2 = 0;
+				
+		boolean resultado = false;
+		for(int y = 0; y < instBool.length;y++) {
+			counter2= 0;
+			resultado = false;
+			for(int y1 = 0; y1< instBool[y].length;y1++) {
+				counter2++;
+				if(counter2 != 0) {
+					resultado = resultado || instBool[y][y1];
+				}
+				if (counter2 == 3) {
+					finalResult[y] = resultado;
+				}
+			}
+		}
+		
+		return finalResult;
+	}
+	
+	private static int getMaxSat(boolean[] resultadoFinal) {
+		int maxSat = 0;
+		
+		for (boolean b : resultadoFinal) {
+			if(b == true) {
+				maxSat++;
+			}
+		}
+		
+		return maxSat;
+	}
+	
+	private static int geraPosicaoFlipar(int lenght) {
+		Random r1 = new Random();
+		
+		int posicao = r1.nextInt(lenght);
+		
+		return posicao;		
+	}
+	
+	private static int[] geraNovoAssignment(int[] assignment, int posicaoFlipar) {
+		int[] novoAssignment = assignment;
+		
+		if(assignment[posicaoFlipar] == 0) {
+			novoAssignment[posicaoFlipar] = 1;
+		}else {
+			novoAssignment[posicaoFlipar] = 0;
+		}
+		
+		return novoAssignment;
+	}
+	
+	
 }
