@@ -17,7 +17,7 @@ public class ReadFile {
 	public ArrayList<String> readLine() throws IOException {
 		// File f = new
 		// File("C:\\Users\\eswarowski\\eclipse-workspace\\SAT_Problem\\bin\\uuf50-01.cnf");
-		File f = new File("C:\\Users\\Edgar Swarowski\\Downloads\\maxSAT-main\\SAT_Problem\\bin\\uf20-01.cnf");
+		File f = new File("C:\\Users\\eswarowski\\Desktop\\Personal\\Masters\\Heurísticas Modernas 2021\\Tarefa_2\\Instâncias\\uf20_91\\uf20-01.cnf");
 		FileReader fr = new FileReader(f);
 		BufferedReader br = new BufferedReader(fr);
 		ArrayList<String> textFileInfo = new ArrayList<String>();

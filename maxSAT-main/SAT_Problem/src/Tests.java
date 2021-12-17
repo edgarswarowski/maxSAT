@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.Random;
 
 public class Tests {
@@ -16,10 +17,10 @@ public class Tests {
 		int iterations = 0;
 		boolean stopCiclo = false;
 		int max = 0;
-		int[] assignmentMax = new int[variableSize];
-		int[][] arrayFitness = new int[variableSize][variableSize];
-		Cromossomo[] arrayFitness2 = new Cromossomo[variableSize];
-
+		boolean[] tempAssignBool = new boolean[variableSize];
+		boolean[] novoAssignBool = new boolean[variableSize];
+		boolean[][] assingFlipado = new boolean[variableSize][variableSize];
+		
 		// LER ARQUIVO
 		ArrayList<String> Teste = r.readLine();
 		String[] convert = new String[Teste.size()];
@@ -33,82 +34,124 @@ public class Tests {
 
 		// CONVERTE ASSIGNMENTE DE INT EM BOOL
 		boolean[] assignmentBool = convertAssigBool(assignment);
+		
+		//USA ASSIGNMENT NO INPUT
+		boolean[][] novaInst2 = preencheInst(input, assignmentBool);
 
-		// CICLO1
-		do {
-			// USA ASSIGNMENT NO INPUT
-			boolean[][] novaInst2 = preencheInst(input, assignmentBool);
+		//RESULTADO POR LINHA DO ARRAYBOOL
+		boolean[] resultadoLinha2 = getResultByLine(instanceLength, novaInst2);
 
-			// RESULTADO POR LINHA DO ARRAYBOOL
-			boolean[] resultadoLinha2 = getResultByLine(instanceLength, novaInst2);
+		//CALCULAR O FITNESS DO ASSIGNMENT
+		maxSat = getMaxSat(resultadoLinha2);
+		
+		if(maxSat == instanceLength) {
+			System.out.println("O maxSat eh: " + maxSat);
+		}else {
+			do {
+				if(iterations == 0) {
+					tempAssignBool = assignmentBool.clone();
+				}else {
+					tempAssignBool = novoAssignBool.clone();
+				}
+				
+				int maximum, maximum2 = 0;
+				int index = 0;
+				//GERAR UM ARRAY COM O ASSIGN FLIPADO
+				for(int g = 0; g < assingFlipado.length;g++) {
+					tempAssignBool[g] = !tempAssignBool[g];
+					assingFlipado[g] = tempAssignBool.clone();
+					
+					//FUNÇÃO PARA EVALUATE FITNESS
+					novaInst2 = preencheInst(input, assingFlipado[g]);
+					resultadoLinha2 = getResultByLine(instanceLength, novaInst2);
+					maxSat = getMaxSat(resultadoLinha2);
+					if(maximum2 < maxSat) {
+						maximum2 = maxSat;
+						index = g;
+					}
+				}
+				
+				novoAssignBool = assingFlipado[index].clone();
+				System.out.println("novo assign: " + Arrays.toString(novoAssignBool));
+				System.out.println("max novo assing: " + maximum2);
+				
+				//System.out.println("Resultado Linha:");
+//				System.out.println(Arrays.toString(resultadoLinha2));
+//				System.out.println("Max-SAT: " + maxSat);
 
-			// CALCULAR O FITNESS DO ASSIGNMENT
-			maxSat = getMaxSat(resultadoLinha2);
+				if (max < maximum2) {
+					max = maximum2;
+				}
 
-			if (maxSat == instanceLength) {
-				stopCiclo = true;
-			} else {
-				// FLIPAR AS POSICOES DO CROMOSSOMO
-				arrayFitness2 = flipaAssignment(assignmentBool, input);
-				// CALCULAR FITNESS
+				iterations++;
+				System.out.println("Interações: " + iterations);
 
-			}
+				System.out.println("O valor máximo atingido foi de: " + max);
+//				System.out.println("O Cromossomo que atingiu o maxSat foi o: \n" + Arrays.toString(assignmentBool));
 
-			System.out.println("Resultado Linha:");
-			System.out.println(Arrays.toString(resultadoLinha2));
-			System.out.println("Max-SAT: " + maxSat);
+				if ((maxSat == instanceLength) || (iterations == maxIterations)) {
+					stopCiclo = true;
+				}
 
-			// CALCULAR FITNESS DE CADA POSICAO
-
-			// SELECIONAR O MAXFITNESS E SE NÃO FOR MAX, FLIPAR DE NOVO
-
-			// FLIPA POSICOES CROMOSSOMO
-
-			if (max < maxSat) {
-				max = maxSat;
-				assignmentMax = assignment;
-			}
-
-			iterations++;
-			System.out.println("Interações: " + iterations);
-
-			System.out.println("O valor máximo atingido foi de: " + max);
-			System.out.println("O Cromossomo que atingiu o maxSat foi o: \n" + Arrays.toString(assignmentMax));
-
-			if ((maxSat == instanceLength) || (iterations == maxIterations)) {
-				stopCiclo = true;
-			}
-
-		} while (stopCiclo != true);
+			} while (stopCiclo != true);
+		}
 	}
 
-	private static Cromossomo[] flipaAssignment(boolean[] assignmentBool, int[][] input) {
-		Cromossomo[] cr = new Cromossomo[assignmentBool.length];
-		System.out.println("assignment original: " + Arrays.toString(assignmentBool));
-		for (int x = 0; x < assignmentBool.length; x++) {
-			if (assignmentBool[x] == true) {
-				assignmentBool[x] = false;
-			} else {
-				assignmentBool[x] = true;
+	private static int getMaxFitness(Cromossomo[] arrayFitness2) {
+		int maxsat = arrayFitness2[0].fitness;
+		for(int p = 0; p < arrayFitness2[0].cromossomo.length; p++) {
+			if(maxsat < arrayFitness2[p].fitness) {
+				maxsat = arrayFitness2[p].fitness;
 			}
+		}
+		
+		return maxsat;
+	}
 
-			boolean[][] x1 = preencheInst(input, assignmentBool);
-			boolean[] resultadoLinha3 = getResultByLine(input.length, x1);
-			int maxSat = getMaxSat(resultadoLinha3);
+	private static boolean[] getMaxAssignment(Cromossomo[] arrayFitness2) {
+		boolean[] maxAssign = new boolean[arrayFitness2[0].cromossomo.length];
+		int max = arrayFitness2[0].fitness;
+		int index = 0;
+		for(int y = 0; y < arrayFitness2[0].cromossomo.length;y++) {
+			if(max < arrayFitness2[y].fitness) {
+				max = arrayFitness2[y].fitness;
+				index = y;
+				
+			}
+		}
+		
+		System.out.println("Index: " + index);
+		System.out.println("Array posicao index: " + Arrays.toString(arrayFitness2[index].cromossomo));
+		maxAssign = arrayFitness2[index].cromossomo;
+		System.out.println("Novo Assign Flipado: " + Arrays.toString(maxAssign));
+		return maxAssign;
+		
+	}
 
-			Cromossomo c = new Cromossomo(maxSat, assignmentBool);
-			cr[x] = c;
-			System.out.println("Cromossomo flipado");
-			System.out.println(Arrays.toString(cr[x].cromossomo));
-			System.out.println((cr[x].fitness));
+	private static boolean[] flipa2(boolean[] assignBool, int limite) {
+		boolean[] tempvar = new boolean[assignBool.length];
+		for(int u = 0; u <= limite; u++) {
+			assignBool[u] = !assignBool[u];
+		}
+		tempvar = assignBool;
+		return tempvar;
+	}
+	
+	private static boolean[][] flipaAssignment(boolean[] assignmentBool) {
+		//Cromossomo[] cr = new Cromossomo[assignmentBool.length];
+		boolean[][] arrayBooleano2 = new boolean[assignmentBool.length][assignmentBool.length];
+		boolean[] temporary = assignmentBool; 
+		int[] arrayFitnes = new int[assignmentBool.length];
+		for (int x = 0; x < assignmentBool.length; x++) {
+			temporary[x] = ! temporary[x];
+			
 		}
 
-		return cr;
-	}
-
-	private static Cromossomo[] calculaFitness(Cromossomo[] cr) {
-
-		return null;
+		//PRINT CROMOSSOMO
+		for(int print = 0; print < arrayBooleano2.length; print++) {
+			System.out.println("IndexOrigem: " + print + "Cromossomo: "+ Arrays.toString(arrayBooleano2[print]));		}
+		
+		return arrayBooleano2;
 	}
 
 	private static boolean[] convertAssigBool(int[] assignment) {
@@ -120,6 +163,9 @@ public class Tests {
 				assignmentBool[b] = true;
 			}
 		}
+		
+		System.out.println("Cromossomo Booleano:");
+		System.out.println(Arrays.toString(assignmentBool));
 		return assignmentBool;
 	}
 
@@ -213,9 +259,5 @@ public class Tests {
 
 		return maxSat;
 	}
-
-//	public static Cromossomo[] flipaAssignment(int[] assignment) {
-//		
-//	}
 
 }
