@@ -12,7 +12,7 @@ public class Tests {
 		int clauseLength = r.returnClauseLength();
 		int variableSize = r.returnVariableSize();
 		int instanceLength = r.returnInstanceLength();
-		int maxIterations = 10;
+		int maxIterations = 1000;
 		int maxSat = 0;
 		int iterations = 0;
 		boolean stopCiclo = false;
@@ -20,7 +20,8 @@ public class Tests {
 		boolean[] tempAssignBool = new boolean[variableSize];
 		boolean[] novoAssignBool = new boolean[variableSize];
 		boolean[][] assingFlipado = new boolean[variableSize][variableSize];
-		
+		int[] ultimosResults = new int[5];
+		int counter = 0;
 		// LER ARQUIVO
 		ArrayList<String> Teste = r.readLine();
 		String[] convert = new String[Teste.size()];
@@ -54,17 +55,39 @@ public class Tests {
 					tempAssignBool = novoAssignBool.clone();
 				}
 				
-				int maximum, maximum2 = 0;
+				if((iterations % 5 == 0)&& (iterations>0)) {
+					//verifica se os últimos 5 resultados são iguais. Se sim gera novo assignment
+					counter = 0;
+					boolean flag = true;
+					int first = ultimosResults[0];
+					for(int z = 0; z < ultimosResults.length; z++) {
+						if(ultimosResults[z] != first) {
+							flag = false;
+						}
+					}
+					
+					if(flag == true) {
+						//gera novo assignment
+						assignment = geraCromossomo(variableSize);
+						assignmentBool = convertAssigBool(assignment);
+						tempAssignBool = assignmentBool.clone();	
+					}				
+				}
+				
+				int maximum2 = 0;
 				int index = 0;
+				boolean[] varTemp = tempAssignBool.clone();
 				//GERAR UM ARRAY COM O ASSIGN FLIPADO
 				for(int g = 0; g < assingFlipado.length;g++) {
+					tempAssignBool = varTemp.clone();
 					tempAssignBool[g] = !tempAssignBool[g];
 					assingFlipado[g] = tempAssignBool.clone();
+					System.out.println("assing da posicao " + g + " : " + Arrays.toString(assingFlipado[g]));
 					
 					//FUNÇÃO PARA EVALUATE FITNESS
-					novaInst2 = preencheInst(input, assingFlipado[g]);
-					resultadoLinha2 = getResultByLine(instanceLength, novaInst2);
-					maxSat = getMaxSat(resultadoLinha2);
+					boolean[][] novaInst3 = preencheInst(input, assingFlipado[g]);
+					boolean[] resultadoLinha3 = getResultByLine(instanceLength, novaInst3);
+					maxSat = getMaxSat(resultadoLinha3);
 					if(maximum2 < maxSat) {
 						maximum2 = maxSat;
 						index = g;
@@ -74,11 +97,10 @@ public class Tests {
 				novoAssignBool = assingFlipado[index].clone();
 				System.out.println("novo assign: " + Arrays.toString(novoAssignBool));
 				System.out.println("max novo assing: " + maximum2);
+				ultimosResults[counter] = maximum2;
+				counter++;
+				System.out.println("Index selecionado: " + index);
 				
-				//System.out.println("Resultado Linha:");
-//				System.out.println(Arrays.toString(resultadoLinha2));
-//				System.out.println("Max-SAT: " + maxSat);
-
 				if (max < maximum2) {
 					max = maximum2;
 				}
@@ -89,7 +111,7 @@ public class Tests {
 				System.out.println("O valor máximo atingido foi de: " + max);
 //				System.out.println("O Cromossomo que atingiu o maxSat foi o: \n" + Arrays.toString(assignmentBool));
 
-				if ((maxSat == instanceLength) || (iterations == maxIterations)) {
+				if ((maximum2 == instanceLength) || (iterations == maxIterations)) {
 					stopCiclo = true;
 				}
 
